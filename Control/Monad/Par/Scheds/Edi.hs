@@ -14,7 +14,7 @@ import Control.Monad.Trans
 import Control.Parallel.Eden.Edi hiding (fork)
 
 newtype Par a = Par { runPar :: IO a }
-  deriving (Monad, MonadIO)
+  deriving Monad
 
 data IVar a = IVar { iVarChan :: ChanName' a
                    , iVarVal  :: a }
