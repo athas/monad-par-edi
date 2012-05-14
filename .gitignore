@@ -1,0 +1,8 @@
+*.o
+*.hi
+*.exe
+*~
+*#
+.#*
+cabal-dev/
+dist/

@@ -1,0 +1,31 @@
+Name:                monad-par-edi
+Version:             0.1
+Synopsis:            EDI backend for monad-par.
+
+Description:         EDI backend for Par.
+
+Homepage:            https://github.com/Athas/monad-par-edi
+License:             BSD3
+License-file:        LICENSE
+Author:              Troels Henriksen, Mads Jensen
+Maintainer:          Troels Henriksen <athas@sigkill.dk>, Mads Jensen <mads379@gmail.com>
+Copyright:           (c) Troels Henriksen, Mads Jensen 2012
+Stability:           Experimental
+Category:            Control,Parallelism,Monads
+Build-type:          Simple
+Cabal-version:       >=1.8
+
+Library
+  Source-repository head
+    type:     git
+    location: https://github.com/Athas/monad-par-edi
+
+  Exposed-modules: Control.Monad.Par.Scheds.Edi
+
+  Build-depends: base >= 4 && < 5
+               -- This provides the interface which monad-par-edi implements:
+               , abstract-par
+               , mtl==2.*
+               , edenmodules
+
+  ghc-options: -O2
