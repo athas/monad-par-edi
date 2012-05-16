@@ -5,6 +5,7 @@ module Control.Monad.Par.Scheds.Edi
   Par,
   IVar,
   runPar,
+  killIVar,
   ParChan(..),
   Send,
   Recv
@@ -12,9 +13,7 @@ module Control.Monad.Par.Scheds.Edi
 where
 
 import Control.Concurrent
-import Control.Monad
 import Control.Monad.Par.Class
-import Control.Monad.Trans
 import Control.Parallel.Eden.Edi hiding (fork)
 import Control.Parallel.Eden.ParPrim hiding (fork)
 
@@ -48,10 +47,9 @@ instance ParIVar IVar Par where
   new = Par $ do
           (rdc,rd) <- createC
           (wrc,wr) <- createC
-          k <- selfPe
-          forkIO $ do let val = wr
-                          cs  = rd
-                      mapM_ (\c -> sendWith rseq c val) cs
+          _ <- forkIO $ do let val = wr
+                               cs  = rd
+                           mapM_ (\c -> sendWith rseq c val) cs
           return $ IVar rdc wrc
   put_ ivar x = Par $ sendWith rseq (iVarWriteChan ivar) x
 
