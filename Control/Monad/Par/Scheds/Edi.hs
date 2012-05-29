@@ -13,12 +13,17 @@ module Control.Monad.Par.Scheds.Edi
 where
 
 import Control.Concurrent
+import Control.Monad
 import Control.Monad.Par.Class
 import Control.Parallel.Eden.Edi hiding (fork)
 import Control.Parallel.Eden.ParPrim hiding (fork)
+import System.IO.Unsafe
 
-newtype Par a = Par { runPar :: IO a }
+newtype Par a = Par { runPar_ :: IO a }
   deriving Monad
+
+runPar :: Par a -> a
+runPar = unsafePerformIO . runPar_
 
 data IVar a = IVar { iVarReadChan :: ChanName' [ChanName' a]
                    , iVarWriteChan :: ChanName' a
@@ -37,12 +42,12 @@ instance ParFuture IVar Par where
                 return ivar
   get ivar = Par $ do (c,x) <- createC
                       connectToPort (iVarReadChan ivar)
-                      sendData Stream $ Right c
+                      sendData Stream c
                       return x
 
 instance ParIVar IVar Par where
   fork m = Par $ do
-             spawnProcessAt 0 $ runPar m
+             spawnProcessAt 0 $ runPar_ m
              return ()
   new = Par $ do
           (rdc,rd) <- createC
@@ -74,15 +79,19 @@ class Monad m => ParChan snd rcv m | m -> snd, m -> rcv where
    send    :: snd a -> a -> m ()
 
 newtype Send a = Send (ChanName' [a])
-newtype Recv a = Recv (MVar [a])
+newtype Recv a = Recv (ChanName' [ChanName' a])
 
 instance ParChan Send Recv Par where
-  newChan = Par $ do (c,x) <- createC
-                     rcv <- newMVar x
-                     return (Send c, Recv rcv)
-  recv (Recv mvar) = Par $ modifyMVar mvar fetch
+  newChan = Par $ do (rdc,rd) <- createC
+                     (wrc,wr) <- createC
+                     _ <- forkIO $ forM_ (zip wr rd) $
+                          \(v,c) -> sendWith rseq c v
+                     return (Send wrc, Recv rdc)
+  recv (Recv chan) = Par $ do (c,x) <- createC
+                              connectToPort chan
+                              sendData Stream $ Right c
+                              return x
     where fetch []     = error "End of stream"
           fetch (x:xs) = return (xs,x)
-  send (Send c) x = Par $ do
-                      connectToPort c
-                      sendData Stream x
+  send (Send c) x = Par $ do connectToPort c
+                             sendData Stream x
