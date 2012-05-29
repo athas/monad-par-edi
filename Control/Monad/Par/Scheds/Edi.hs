@@ -8,7 +8,10 @@ module Control.Monad.Par.Scheds.Edi
   killIVar,
   ParChan(..),
   Send,
-  Recv
+  Recv,
+  new, get, put_, fork,
+  newFull, newFull_, put,
+  spawn, spawn_, spawnP,
  )
 where
 
